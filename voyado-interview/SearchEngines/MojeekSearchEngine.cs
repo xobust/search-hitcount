@@ -2,6 +2,7 @@
 using System.Net.Http;
 using System.Text.Json;
 using System.Threading;
+using interview.Models;
 
 namespace interview.SearchEngines;
 
@@ -24,9 +25,11 @@ public class MojeekSearchEngine(HttpClient httpClient, IConfiguration configurat
 
     private record SearchWord(string Full, ulong Hits);
 
-    public async Task<ulong> GetHitCount(string searchWord, CancellationToken cancellation)
+
+    public async Task<IEnumerable<KeyWordHitCount>> WordHitCounts(IEnumerable<string> searchWords, CancellationToken cancellation)
     {
-        string requestUri = $"?q={Uri.EscapeDataString(searchWord)}&api_key={_apiKey}&fmt=json";
+        string query = string.Join(" ", searchWords);
+        string requestUri = $"?q={Uri.EscapeDataString(query)}&api_key={_apiKey}&fmt=json";
 
         // The Mojeek API response is quiet large here I show how we can
         // Utilize a stream to optimize the memory usage
@@ -59,6 +62,6 @@ public class MojeekSearchEngine(HttpClient httpClient, IConfiguration configurat
             throw new Exception("No words found in search response");
         }
 
-        return head.Words[0].Hits;
+        return head.Words.Select(word => new KeyWordHitCount(word.Full, word.Hits));
     }
 }

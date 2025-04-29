@@ -1,9 +1,11 @@
 
-namespace interview.SearchEngines;
+using interview.Models;
 
+namespace interview.SearchEngines;
 
 public interface ISearchEngine
 {
     string Name { get; }
-    public Task<ulong> GetHitCount(string searchWord, CancellationToken cancellation);
+
+    public Task<IEnumerable<KeyWordHitCount>> WordHitCounts(IEnumerable<string> searchWords, CancellationToken cancellation);
 }

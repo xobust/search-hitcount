@@ -1,5 +1,6 @@
 ﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using interview.Models;
 
 namespace interview.SearchEngines;
 
@@ -19,6 +20,15 @@ public class SearchApiIoEngine(HttpClient httpClient, IConfiguration configurati
     private record SearchInformation(ulong? TotalResults);
 
     private record Response(SearchInformation SearchInformation);
+
+    public Task<IEnumerable<KeyWordHitCount>> WordHitCounts(IEnumerable<string> searchWords, CancellationToken cancellation)
+    {
+        var tasks = searchWords.Select(searchWord => GetHitCount(searchWord, cancellation));
+        return Task.WhenAll(tasks).ContinueWith(t =>
+        {
+            return searchWords.Zip(t.Result, (word, count) => new KeyWordHitCount(word, count));
+        }, cancellation);
+    }
 
     public async Task<ulong> GetHitCount(string searchWord, CancellationToken cancellation)
     {

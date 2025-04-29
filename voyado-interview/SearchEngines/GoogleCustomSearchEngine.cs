@@ -1,6 +1,7 @@
 ﻿
 
 using System.Text.Json;
+using interview.Models;
 
 namespace interview.SearchEngines;
 
@@ -20,6 +21,15 @@ public class GoogleCustomSearchEngine(IConfiguration configuration, HttpClient h
     private record Request(string TotalResults);
 
     public string Name => "Google Custom Search Engine";
+
+    public Task<IEnumerable<KeyWordHitCount>> WordHitCounts(IEnumerable<string> searchWords, CancellationToken cancellation)
+    {
+        var tasks = searchWords.Select(searchWord => GetHitCount(searchWord, cancellation));
+        return Task.WhenAll(tasks).ContinueWith(t =>
+        {
+            return searchWords.Zip(t.Result, (word, count) => new KeyWordHitCount(word, count));
+        }, cancellation);
+    }
 
     public async Task<ulong> GetHitCount(string searchWord, CancellationToken cancellation)
     {
@@ -48,4 +58,5 @@ public class GoogleCustomSearchEngine(IConfiguration configuration, HttpClient h
         ulong totalResults = ulong.Parse(responseData.Queries.Request[0].TotalResults);
         return totalResults;
     }
+
 }

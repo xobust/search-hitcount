@@ -14,12 +14,11 @@ public partial class SearchAgregator(IEnumerable<ISearchEngine> searchEngines) :
         var searchEngineResults = new List<SearchEngineResult>();
         foreach (var searchEngine in searchEngines)
         {
-            foreach (var searchWord in searchWords)
-            {
-                var hitCount = await searchEngine.GetHitCount(searchWord, cancellation);
-                searchEngineResults.Add(new SearchEngineResult(searchEngine.Name,
-                    new KeyWordHitCount(searchWord, hitCount)));
-            }
+            var hitCount = await searchEngine.WordHitCounts(searchWords, cancellation);
+            hitCount.Select(hitCount => new SearchEngineResult(
+                searchEngine.Name,
+                hitCount
+            )).ToList().ForEach(searchEngineResults.Add);
         }
 
         var totalHits = searchEngineResults
