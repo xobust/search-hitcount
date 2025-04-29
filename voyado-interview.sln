@@ -1,0 +1,35 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "voyado-interview", "voyado-interview\voyado-interview.csproj", "{A7934163-A1C8-C21A-27AF-3F8B4BE4C6F3}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "voyado-interview.tests", "voyado-interview.tests\voyado-interview.tests.csproj", "{42E445B3-15F9-4353-A7E1-A780D7CF0206}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{8EC462FD-D22E-90A8-E5CE-7E832BA40C5D}"
+	ProjectSection(SolutionItems) = preProject
+		readme.md = readme.md
+	EndProjectSection
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{A7934163-A1C8-C21A-27AF-3F8B4BE4C6F3}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A7934163-A1C8-C21A-27AF-3F8B4BE4C6F3}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A7934163-A1C8-C21A-27AF-3F8B4BE4C6F3}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A7934163-A1C8-C21A-27AF-3F8B4BE4C6F3}.Release|Any CPU.Build.0 = Release|Any CPU
+		{42E445B3-15F9-4353-A7E1-A780D7CF0206}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{42E445B3-15F9-4353-A7E1-A780D7CF0206}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{42E445B3-15F9-4353-A7E1-A780D7CF0206}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{42E445B3-15F9-4353-A7E1-A780D7CF0206}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {C173F3B2-B4A6-4F5B-AE34-714D2D1F67B1}
+	EndGlobalSection
+EndGlobal

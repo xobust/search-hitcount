@@ -1,0 +1,433 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Aggregator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tailwindcss/2.2.19/tailwind.min.css">
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+    <style>
+        body {
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        .animated-gradient {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(-45deg, #ee7752, #e73c7e, #23a6d5, #23d5ab);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+            z-index: -1;
+            opacity: 0.7;
+        }
+
+        @keyframes gradient {
+            0% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
+
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
+        .content-wrapper {
+            flex: 1;
+            z-index: 1;
+        }
+
+        .search-box {
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.9);
+        }
+
+            .search-box:focus-within {
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+                transform: translateY(-2px);
+            }
+
+        .result-card {
+            transition: all 0.3s ease;
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+            .result-card:hover {
+                transform: translateY(-3px);
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            }
+
+        .engine-logo {
+            width: 28px;
+            height: 28px;
+            object-fit: contain;
+        }
+
+        .loading {
+            position: relative;
+        }
+
+            .loading:after {
+                content: '';
+                position: absolute;
+                width: 100%;
+                height: 100%;
+                top: 0;
+                left: 0;
+                background: rgba(255, 255, 255, 0.8);
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                z-index: 10;
+                border-radius: 8px;
+            }
+
+            .loading:before {
+                content: '';
+                box-sizing: border-box;
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                width: 30px;
+                height: 30px;
+                margin-top: -15px;
+                margin-left: -15px;
+                border-radius: 50%;
+                border: 3px solid #ccc;
+                border-top-color: #3b82f6;
+                animation: spinner 0.6s linear infinite;
+                z-index: 20;
+            }
+
+        @keyframes spinner {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        footer {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            position: sticky;
+            bottom: 0;
+            width: 100%;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+    <div class="animated-gradient"></div>
+
+    <div class="content-wrapper">
+        <div class="container mx-auto px-4 py-12 mb-16">
+            <header class="mb-10 text-center">
+                <h1 class="text-5xl font-bold text-white mb-3 text-shadow">Meta<span class="text-indigo-100">Search</span></h1>
+                <p class="text-white text-lg text-shadow">Search across multiple engines with a single query</p>
+            </header>
+
+            <div class="max-w-3xl mx-auto">
+                <div class="search-box rounded-lg p-5 mb-8">
+                    <div class="flex flex-col md:flex-row gap-3">
+                        <input type="text"
+                               id="searchInput"
+                               placeholder="Enter search terms (separate with spaces)"
+                               class="flex-1 p-4 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none bg-white">
+                        <button id="searchBtn"
+                                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-4 px-8 rounded-lg transition-colors">
+                            Search
+                        </button>
+                    </div>
+                </div>
+
+                <div id="searchInfo" class="mb-6 hidden">
+                    <div class="bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-lg p-5 shadow-lg">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-3">Search Summary</h2>
+                        <div id="totalHitsContainer" class="space-y-2">
+                            <!-- Total hits will be populated here -->
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultsContainer" class="space-y-6 mb-8">
+                    <!-- Search engine groups will be populated here -->
+                </div>
+
+                <div id="noResults" class="hidden text-center py-12 bg-white bg-opacity-90 backdrop-filter backdrop-blur-sm rounded-lg">
+                    <svg class="mx-auto h-12 w-12 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3 class="mt-2 text-lg font-medium text-gray-900">No results found</h3>
+                    <p class="mt-1 text-gray-500">Try adjusting your search terms or search for something else.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="py-4 border-t border-gray-200">
+        <div class="container mx-auto px-4 text-center text-gray-600">
+            <p>© 2025 MetaSearch Aggregator</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            const searchBtn = document.getElementById('searchBtn');
+            const resultsContainer = document.getElementById('resultsContainer');
+            const searchInfo = document.getElementById('searchInfo');
+            const totalHitsContainer = document.getElementById('totalHitsContainer');
+            const noResults = document.getElementById('noResults');
+
+            // Search engine logos mapping
+            const engineLogos = {
+                'Google': '/static/google.svg',
+                'Bing': '/static/bing.svg',
+                'Youtube': '/static/youtube.svg',
+                'Mojeek': '/static/mojeek.svg',
+            };
+
+            // Enable search on Enter key
+            searchInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    performSearch();
+                }
+            });
+
+            // Search button click handler
+            searchBtn.addEventListener('click', performSearch);
+
+            // Add visual effects to the animated background
+            addVisualEffects();
+
+            async function performSearch() {
+                const searchQuery = searchInput.value.trim();
+
+                if (!searchQuery) {
+                    showToast('Please enter search terms');
+                    return;
+                }
+
+                // Show loading state
+                resultsContainer.classList.add('loading');
+                noResults.classList.add('hidden');
+                searchInfo.classList.add('hidden');
+                resultsContainer.innerHTML = '';
+
+                try {
+                    const response = await fetch(`/search?searchQuery=${encodeURIComponent(searchQuery)}`);
+
+                    if (!response.ok) {
+                        throw new Error(`Error: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    displayResults(data, searchQuery);
+                } catch (error) {
+                    console.error('Search error:', error);
+                    showErrorMessage('Failed to perform search. Please try again.');
+                } finally {
+                    resultsContainer.classList.remove('loading');
+                }
+            }
+
+            function displayResults(data, searchQuery) {
+                resultsContainer.innerHTML = '';
+
+                if (!data.searchEngineResults || data.searchEngineResults.length === 0) {
+                    noResults.classList.remove('hidden');
+                    return;
+                }
+
+                // Display the total hits summary
+                searchInfo.classList.remove('hidden');
+                totalHitsContainer.innerHTML = '';
+
+                if (data.totalHits && data.totalHits.length > 0) {
+                    data.totalHits.forEach(hit => {
+                        const hitElement = document.createElement('div');
+                        hitElement.className = 'flex justify-between items-center p-3 bg-indigo-50 rounded-lg';
+                        hitElement.innerHTML = `
+                                <span class="font-medium text-indigo-700">${hit.keyWord}</span>
+                                <span class="bg-indigo-100 text-indigo-800 py-1 px-3 rounded-full font-medium">
+                                    ${formatNumber(hit.hitCount)} hits
+                                </span>
+                            `;
+                        totalHitsContainer.appendChild(hitElement);
+                    });
+                }
+
+                // Group search engines by name
+                const searchEngineGroups = {};
+                data.searchEngineResults.forEach(result => {
+                    const engineName = result.name;
+
+                    if (!searchEngineGroups[engineName]) {
+                        searchEngineGroups[engineName] = {
+                            name: engineName,
+                            keyWordHits: []
+                        };
+                    }
+
+                    if (result.keyWordHitCount) {
+                        searchEngineGroups[engineName].keyWordHits.push(result.keyWordHitCount);
+                    }
+                });
+
+                // Display grouped search engine results
+                Object.values(searchEngineGroups).forEach(engineGroup => {
+                    const card = document.createElement('div');
+                    card.className = 'result-card rounded-lg shadow-lg p-6';
+
+                    // Logo selection based on engine name
+                    let logoPath = null;
+                    let logoAlt = engineGroup.name;
+
+                    // Find logo for the engine
+                    for (const [engine, path] of Object.entries(engineLogos)) {
+                        if (engineGroup.name.toLowerCase().includes(engine.toLowerCase())) {
+                            logoPath = path;
+                            break;
+                        }
+                    }
+
+                    // Engine header with logo
+                    let engineHeader = `
+                            <div class="flex items-center gap-3 mb-4">
+                        `;
+
+                    if (logoPath) {
+                        engineHeader += `<img src="${logoPath}" alt="${logoAlt}" class="engine-logo">`;
+                    }
+
+                    engineHeader += `
+                                <h3 class="text-xl font-semibold text-gray-800">${engineGroup.name}</h3>
+                            </div>
+                        `;
+
+                    // Keywords hits for this engine
+                    let hitsContent = '';
+                    if (engineGroup.keyWordHits.length > 0) {
+                        hitsContent = `
+                                <div class="space-y-3">
+                                    ${engineGroup.keyWordHits.map(hit => `
+                                        <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                                            <span class="font-medium">${hit.keyWord}</span>
+                                            <span class="bg-gray-200 text-gray-800 py-1 px-4 rounded-full text-sm font-medium">
+                                                ${formatNumber(hit.hitCount)} hits
+                                            </span>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            `;
+                    }
+
+                    card.innerHTML = engineHeader + hitsContent;
+                    resultsContainer.appendChild(card);
+                });
+            }
+
+            function formatNumber(num) {
+                return new Intl.NumberFormat().format(num);
+            }
+
+            function showErrorMessage(message) {
+                resultsContainer.innerHTML = `
+                        <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-lg">
+                            <div class="flex">
+                                <div class="flex-shrink-0">
+                                    <svg class="h-5 w-5 text-red-400" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <div class="ml-3">
+                                    <p class="text-sm text-red-700">${message}</p>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+            }
+
+            function showToast(message) {
+                const toast = document.createElement('div');
+                toast.className = 'fixed top-4 right-4 bg-gray-800 text-white px-4 py-2 rounded shadow-lg z-50 transition-opacity';
+                toast.textContent = message;
+                document.body.appendChild(toast);
+
+                setTimeout(() => {
+                    toast.style.opacity = '0';
+                    setTimeout(() => {
+                        document.body.removeChild(toast);
+                    }, 300);
+                }, 3000);
+            }
+
+            function addVisualEffects() {
+                // Create floating particles
+                const particleCount = 20;
+                const container = document.querySelector('.animated-gradient');
+
+                for (let i = 0; i < particleCount; i++) {
+                    const particle = document.createElement('div');
+
+                    // Random styling for each particle
+                    const size = Math.random() * 10 + 2;
+                    const posX = Math.random() * 100;
+                    const posY = Math.random() * 100;
+                    const duration = Math.random() * 20 + 10;
+                    const delay = Math.random() * 5;
+
+                    particle.style.cssText = `
+                            position: absolute;
+                            width: ${size}px;
+                            height: ${size}px;
+                            background-color: rgba(255, 255, 255, 0.5);
+                            left: ${posX}%;
+                            top: ${posY}%;
+                            border-radius: 50%;
+                            pointer-events: none;
+                            animation: float ${duration}s ease-in-out ${delay}s infinite alternate;
+                        `;
+
+                    container.appendChild(particle);
+                }
+
+                // Add animation for the particles
+                const style = document.createElement('style');
+                style.textContent = `
+                        @keyframes float {
+                            0% {
+                                transform: translateY(0) translateX(0);
+                                opacity: 0.3;
+                            }
+                            100% {
+                                transform: translateY(-100px) translateX(50px);
+                                opacity: 0.8;
+                            }
+                        }
+                        .text-shadow {
+                            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+                        }
+                    `;
+                document.head.appendChild(style);
+            }
+
+            // For demo purposes, let's prefill the search box
+            searchInput.value = 'artificial intelligence technology';
+        });
+    </script>
+</body>
+</html>
