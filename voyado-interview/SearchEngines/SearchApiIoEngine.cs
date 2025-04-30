@@ -8,8 +8,6 @@ namespace interview.SearchEngines;
 /// Implementation using https://www.searchapi.io
 /// Can be used with multiple sources that supports total_results
 /// </summary>
-/// <param name="httpClient"></param>
-/// <param name="engine"></param>
 public class SearchApiIoEngine(HttpClient httpClient, IConfiguration configuration, string engine) : HttpClient, ISearchEngine
 {
     public string Name => engine;

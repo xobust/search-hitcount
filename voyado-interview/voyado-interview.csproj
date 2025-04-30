@@ -9,6 +9,7 @@
     <UserSecretsId>a1dec987-d4bc-406b-bcce-55cd9798b931</UserSecretsId>
     <DockerDefaultTargetOS>Linux</DockerDefaultTargetOS>
     <DockerfileContext>.</DockerfileContext>
+	<EnableNETAnalyzers>true</EnableNETAnalyzers>
   </PropertyGroup>
 
   <ItemGroup>

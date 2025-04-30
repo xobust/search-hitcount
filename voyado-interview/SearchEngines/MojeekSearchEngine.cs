@@ -35,7 +35,8 @@ public class MojeekSearchEngine(HttpClient httpClient, IConfiguration configurat
         // Utilize a stream to optimize the memory usage
         // see: https://josef.codes/you-are-probably-still-using-httpclient-wrong-and-it-is-destabilizing-your-software/
         HttpRequestMessage request = new HttpRequestMessage(HttpMethod.Get, requestUri);
-        using var result = await httpClient.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
+        using var result = await httpClient
+            .SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellation).ConfigureAwait(false);
         result.EnsureSuccessStatusCode();
 
         // Deserialize lower case json properties
@@ -44,12 +45,8 @@ public class MojeekSearchEngine(HttpClient httpClient, IConfiguration configurat
             PropertyNameCaseInsensitive = true,
         };
 
-        //using var contentStream = await result.Content.ReadAsStreamAsync();
-        //QueryResponse? responseData = await JsonSerializer.DeserializeAsync<QueryResponse>(contentStream, cancellationToken: cancellation);
-
-
-        string content = await result.Content.ReadAsStringAsync(cancellation);
-        ResponseEnvelope? responseData = JsonSerializer.Deserialize<ResponseEnvelope>(content, jsonOptions);
+        using var contentStream = await result.Content.ReadAsStreamAsync();
+        var responseData = await JsonSerializer.DeserializeAsync<ResponseEnvelope>(contentStream, jsonOptions, cancellation);
 
         if (responseData?.Response.Status != "OK")
         {

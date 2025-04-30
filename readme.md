@@ -28,13 +28,14 @@ the user.
 I used this site as reference for what serch engine builds their own indexes:
 https://seirdy.one/posts/2021/03/10/search-engines-with-own-indexes/
 
+
+> [!NOTE]
+> I could not get Bing to work as Microsoft has shut down Bing v7 api for some reason. The scraper also did not include hit count.
+
 - [Google (custom search engine)](https://developers.google.com/custom-search/v1/overview)
 - [Mojeek](https://www.mojeek.com/support/api/search) 
 - [Searchapi](https://searchapi.io) 
  they have a few different scraped search providers
-
-> [!NOTE]
-> I could not get Bing to work as Microsoft has shut down Bing v7 api for some reason. The scraper also did not include hit count.
 
 ## Configuration 
 The following secrets needs to be set
