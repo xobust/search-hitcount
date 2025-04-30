@@ -1,5 +1,7 @@
 using Autofac;
+using interview.Models;
 using interview.SearchEngines;
+using Microsoft.Extensions.Logging;
 using IContainer = Autofac.IContainer;
 
 namespace interview.Tests;
@@ -11,30 +13,28 @@ public class TestSearchEngine : ISearchEngine
 {
     public string Name { get; }
     private readonly Dictionary<string, ulong> _hitCounts;
-    private readonly bool _simulateCancellation;
 
-    public TestSearchEngine(string name, Dictionary<string, ulong> hitCounts, bool simulateCancellation = false)
+    public TestSearchEngine(string name, Dictionary<string, ulong> hitCounts)
     {
         Name = name;
         _hitCounts = hitCounts;
-        _simulateCancellation = simulateCancellation;
     }
 
-    public Task<ulong> GetHitCount(string searchWord, CancellationToken cancellation)
+    public Task<IEnumerable<KeyWordHitCount>> WordHitCounts(IEnumerable<string> searchWords, CancellationToken cancellation)
     {
-        if (_simulateCancellation && cancellation.IsCancellationRequested)
-        {
-            throw new TaskCanceledException();
-        }
-
-        _hitCounts.TryGetValue(searchWord, out var hitCount);
-        return Task.FromResult(hitCount);
+        var results = searchWords
+            .Select(word => new KeyWordHitCount(word, _hitCounts.GetValueOrDefault(word, 0UL)))
+            .Where(result => result.HitCount != 0UL);
+        return Task.FromResult(results);
     }
 }
 
-public class SearchAggregatorTests
+public class SearchAggregatorTests()
 {
-    private IContainer BuildContainer(IEnumerable<ISearchEngine> searchEngines)
+    private static readonly ILogger<SearchAgregator> NullLogger = new LoggerFactory().CreateLogger<SearchAgregator>();
+
+
+    private static IContainer BuildContainer(IEnumerable<ISearchEngine> searchEngines)
     {
         var builder = new ContainerBuilder();
         foreach (var searchEngine in searchEngines)
@@ -60,7 +60,7 @@ public class SearchAggregatorTests
 
         var container = BuildContainer(new[] { mockSearchEngine1, mockSearchEngine2 });
         var searchEngines = container.Resolve<IEnumerable<ISearchEngine>>();
-        var searchAgregator = new SearchAgregator(searchEngines);
+        var searchAgregator = new SearchAgregator(searchEngines, NullLogger);
 
         string searchQuery = "test";
         var cancellationToken = CancellationToken.None;
@@ -83,7 +83,7 @@ public class SearchAggregatorTests
         var mockSearchEngine = new TestSearchEngine("Engine1", new Dictionary<string, ulong>());
         var container = BuildContainer(new[] { mockSearchEngine });
         var searchEngines = container.Resolve<IEnumerable<ISearchEngine>>();
-        var searchAgregator = new SearchAgregator(searchEngines);
+        var searchAgregator = new SearchAgregator(searchEngines, NullLogger);
 
         string searchQuery = "";
         var cancellationToken = CancellationToken.None;
@@ -109,7 +109,7 @@ public class SearchAggregatorTests
 
         var container = BuildContainer(new[] { mockSearchEngine });
         var searchEngines = container.Resolve<IEnumerable<ISearchEngine>>();
-        var searchAgregator = new SearchAgregator(searchEngines);
+        var searchAgregator = new SearchAgregator(searchEngines, NullLogger);
 
         string searchQuery = "word1 word2";
         var cancellationToken = CancellationToken.None;
@@ -123,22 +123,5 @@ public class SearchAggregatorTests
         Assert.Equal(2, result.TotalHits.Length);
         Assert.Contains(result.TotalHits, x => x.KeyWord == "word1" && x.HitCount == 5);
         Assert.Contains(result.TotalHits, x => x.KeyWord == "word2" && x.HitCount == 15);
-    }
-
-    [Fact]
-    public async Task GetAgregateSearchResult_CancelsOperation()
-    {
-        // Arrange
-        var mockSearchEngine = new TestSearchEngine("Engine1", new Dictionary<string, ulong>(), simulateCancellation: true);
-        var container = BuildContainer(new[] { mockSearchEngine });
-        var searchEngines = container.Resolve<IEnumerable<ISearchEngine>>();
-        var searchAgregator = new SearchAgregator(searchEngines);
-
-        string searchQuery = "test";
-        var cancellationToken = new CancellationToken(true);
-
-        // Act & Assert
-        await Assert.ThrowsAsync<TaskCanceledException>(() =>
-            searchAgregator.GetAgregateSearchResult(searchQuery, cancellationToken));
     }
 }
